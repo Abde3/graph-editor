@@ -6,13 +6,20 @@ package de.tesis.dynaware.grapheditor.core.skins.defaults;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.tesis.dynaware.grapheditor.core.skins.defaults.connection.SimpleConnectionSkin;
+import javafx.animation.FillTransition;
 import javafx.css.PseudoClass;
 import javafx.geometry.Point2D;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +74,9 @@ public class DefaultNodeSkin extends GNodeSkin {
     private final Rectangle border = new Rectangle();
     private final Rectangle background = new Rectangle();
 
+    private final ContextMenu contextMenu = new ContextMenu();
+    private FillTransition ft;
+
     /**
      * Creates a new default node skin instance.
      *
@@ -93,6 +103,44 @@ public class DefaultNodeSkin extends GNodeSkin {
         background.addEventFilter(MouseEvent.MOUSE_DRAGGED, this::filterMouseDragged);
 
         addSelectionHalo();
+
+
+        MenuItem cut = new MenuItem("Cut");
+        MenuItem copy = new MenuItem("Copy");
+        MenuItem paste = new MenuItem("Paste");
+
+        contextMenu.getItems().addAll(cut, copy, paste);
+
+        /**
+         * ADDED To Show Context Menu on Node Click
+         */
+        background.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
+            contextMenu.show(background, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
+
+        background.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
+            contextMenu.hide();
+        });
+
+        /**
+         * END
+         */
+
+    }
+
+    public void animateNode(Color color) {
+        ft = new FillTransition(Duration.millis(1000), background, color, Color.TRANSPARENT);
+        ft.setCycleCount(1);
+        ft.setAutoReverse(true);
+
+        ft.play();
+    }
+
+    public void taskArrived(Integer taskNumber) {
+
+        animateNode(SimpleConnectionSkin.createColor(taskNumber));
+
     }
 
     @Override

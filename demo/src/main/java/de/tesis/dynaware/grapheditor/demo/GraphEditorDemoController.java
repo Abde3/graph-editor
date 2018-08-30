@@ -5,6 +5,7 @@ package de.tesis.dynaware.grapheditor.demo;
 
 import java.util.Map;
 
+import de.tesis.dynaware.grapheditor.demo.animation.AnimationManager;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain;
 import org.eclipse.emf.edit.domain.EditingDomain;
@@ -104,6 +105,8 @@ public class GraphEditorDemoController {
     private DefaultSkinController defaultSkinController;
     private TreeSkinController treeSkinController;
     private TitledSkinController titledSkinController;
+    private AnimationManager animationManager;
+
 
     private final ObjectProperty<SkinController> activeSkinController = new SimpleObjectProperty<SkinController>(){
 
@@ -137,6 +140,7 @@ public class GraphEditorDemoController {
         titledSkinController = new TitledSkinController(graphEditor, graphEditorContainer);
 
         activeSkinController.set(defaultSkinController);
+        animationManager = new AnimationManager(graphEditorContainer, defaultSkinController);
 
 		graphEditor.modelProperty().addListener((w, o, n) -> selectionCopier.initialize(n));
         selectionCopier.initialize(model);
@@ -149,6 +153,9 @@ public class GraphEditorDemoController {
     public void load() {
         graphEditorPersistence.loadFromFile(graphEditor);
         checkSkinType();
+
+        animationManager.initialize();
+        animationManager.computeAnimationPath();
     }
 
     @FXML

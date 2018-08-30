@@ -112,4 +112,8 @@ public abstract class GConnectionSkin extends GSkin<GConnection> {
     public int getParentIndex() {
         return connectionIndex;
     }
+
+    public GConnection getConnection() {
+        return super.getItem();
+    }
 }
