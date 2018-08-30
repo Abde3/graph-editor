@@ -37,7 +37,37 @@
             <artifactId>javafx</artifactId>
             <version>8.5.1</version>
         </dependency>
-    </dependencies>
+		<dependency>
+			<groupId>de.tesis.dynaware</groupId>
+			<artifactId>de.tesis.dynaware.grapheditor.model</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.tesis.dynaware</groupId>
+			<artifactId>de.tesis.dynaware.grapheditor.api</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.tesis.dynaware</groupId>
+			<artifactId>de.tesis.dynaware.grapheditor.api</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.tesis.dynaware</groupId>
+			<artifactId>de.tesis.dynaware.grapheditor.api</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.tesis.dynaware</groupId>
+			<artifactId>de.tesis.dynaware.grapheditor.api</artifactId>
+			<version>1.4.3</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>

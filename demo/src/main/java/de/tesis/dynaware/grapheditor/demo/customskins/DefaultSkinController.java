@@ -427,10 +427,6 @@ public class DefaultSkinController implements SkinController {
 
             transition.getChildren().add(connectionSkin.parallelTransitions.lastElement());
             transition.setCycleCount(1);
-
-//                transition.setOnFinished(event -> {
-//                    connectionSkin.removeLastElelementInQueue();
-//                });
         }
 
         return transition;

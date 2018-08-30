@@ -125,11 +125,10 @@ public class AnimationManager {
      *
      */
     public void initialize() {
-        simulationFile = new SimulationFile(skinController, "/home/mofed/IdeaProjects/DEVS Modeling/NOC/output/out_test_read");
+        simulationFile = new SimulationFile(skinController, "C:\\Users\\Abdelhak khemiri\\IdeaProjects\\DEVS Modeling\\NOC\\output\\out_test_read");
 
         simulationFile.readSimulationFile();
         simulationFile.buildSequences();
-
     }
 
 

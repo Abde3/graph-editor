@@ -3,15 +3,13 @@
  */
 package de.tesis.dynaware.grapheditor.core.skins.defaults.connection;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
+import java.util.function.Supplier;
 
+import de.tesis.dynaware.grapheditor.core.model.Task;
 import de.tesis.dynaware.grapheditor.core.skins.defaults.DefaultNodeSkin;
-import javafx.animation.FadeTransition;
-import javafx.animation.ParallelTransition;
-import javafx.animation.PathTransition;
+import de.tesis.dynaware.grapheditor.model.GConnector;
+import javafx.animation.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.NodeOrientation;
@@ -89,7 +87,7 @@ public class SimpleConnectionSkin extends GConnectionSkin {
     public Vector<ParallelTransition> parallelTransitions = new Vector<>();
     public Vector<FadeTransition> fts = new Vector<>();
     public Pane queue ;
-    public ObservableList<Rectangle> rectangles = FXCollections.observableArrayList();
+    public ObservableList<Task> rectangles = FXCollections.observableArrayList();
 
     /**
      * Creates a new simple connection skin instance.
@@ -134,7 +132,7 @@ public class SimpleConnectionSkin extends GConnectionSkin {
             queue.setNodeOrientation(NodeOrientation.INHERIT);
         } else if (getConnection().getTarget().getType().contains("right")) {
             queue = new HBox();
-            queue.setMaxHeight( position.getX() + (25/2) );
+            queue.setLayoutX( position.getX() - (25/2) );
             queue.setLayoutY( position.getY() -  RECTANGLE_HEIGHT/2 );
             queue.setNodeOrientation(NodeOrientation.INHERIT);
         } else if (getConnection().getTarget().getType().contains("top")) {
@@ -142,10 +140,11 @@ public class SimpleConnectionSkin extends GConnectionSkin {
             queue.setLayoutX( position.getX() - RECTANGLE_WIDTH/2  );
             queue.setLayoutY( position.getY() - (25/2) );
             queue.setNodeOrientation(NodeOrientation.INHERIT);
+            queue.setRotate(180);
         } else if (getConnection().getTarget().getType().contains("bottom")) {
             queue = new VBox();
-            queue.setLayoutX( position.getX() + RECTANGLE_WIDTH );
-            queue.setLayoutY( position.getY() + (25/2) );
+            queue.setLayoutX( position.getX() - RECTANGLE_WIDTH );
+            queue.setLayoutY( position.getY() - (25/2) );
             queue.setNodeOrientation(NodeOrientation.INHERIT);
 
         }
@@ -154,7 +153,6 @@ public class SimpleConnectionSkin extends GConnectionSkin {
                 + "-fx-border-radius: 0;" + "-fx-border-color: blue;");
 
         queue.setNodeOrientation(NodeOrientation.RIGHT_TO_LEFT);
-        queue.toFront();
 
         root.getChildren().add(queue);
 
@@ -257,7 +255,7 @@ public class SimpleConnectionSkin extends GConnectionSkin {
             return;
         }
         
-        final GNode sourceNode = (GNode) getItem().getSource().getParent();
+        final GNode sourceNode = getItem().getSource().getParent();
         final GNodeSkin sourceNodeSkin = getGraphEditor().getSkinLookup().lookupNode(sourceNode);
 
         if (RectangularConnectionUtils.isSegmentHorizontal(getItem(), 0)) {
@@ -266,7 +264,7 @@ public class SimpleConnectionSkin extends GConnectionSkin {
             jointSkins.get(0).getRoot().dragEnabledXProperty().bind(sourceNodeSkin.selectedProperty());
         }
 
-        final GNode targetNode = (GNode) getItem().getTarget().getParent();
+        final GNode targetNode = getItem().getTarget().getParent();
         final GNodeSkin targetNodeSkin = getGraphEditor().getSkinLookup().lookupNode(targetNode);
         final int lastIndex = jointSkins.size() - 1;
 
@@ -402,6 +400,21 @@ public class SimpleConnectionSkin extends GConnectionSkin {
         return  new Color(1-bgColor.getRed(), 1-bgColor.getGreen(), 1-bgColor.getBlue(), 1);
     }
 
+    public static void addAnimating(final Node node, final Group parent, final Supplier<Animation> animationCreator) {
+        parent.getChildren().add(node);
+        animationCreator.get().play();
+    }
+
+    public static void removeAnimating(final Node node, final Group parent, final Supplier<Animation> animationCreator) {
+        if (parent.getChildren().contains(node)) {
+            final Animation animation = animationCreator.get();
+            animation.setOnFinished(finishHim -> {
+                parent.getChildren().remove(node);
+            });
+            animation.play();
+        }
+    }
+
     public void createNewAnimationPath (Integer taskNumber) {
         Circle circle = new Circle(0, 0, 15);
         circle.setFill(createColor(taskNumber));
@@ -425,7 +438,7 @@ public class SimpleConnectionSkin extends GConnectionSkin {
 
         pathTransition.setOnFinished(event -> {
 
-            Rectangle rect = new Rectangle(RECTANGLE_WIDTH,RECTANGLE_HEIGHT);
+            Task rect = new Task(taskNumber, RECTANGLE_WIDTH,RECTANGLE_HEIGHT);
             rectangles.add(rect);
 
             rect.toFront();
@@ -441,24 +454,70 @@ public class SimpleConnectionSkin extends GConnectionSkin {
         ft.setAutoReverse(true);
         fts.add(ft);
 
-        ParallelTransition parallelTransition = new ParallelTransition();
-        parallelTransition.getChildren().setAll(pathTransition, ft);
+        FadeTransition ftTask = new FadeTransition(Duration.millis(.1), stack);
+        ftTask.setFromValue(1);
+        ftTask.setToValue(1);
+        ftTask.setCycleCount(1);
+        ftTask.setAutoReverse(true);
 
+        ftTask.setOnFinished(event -> {
+            System.out.println("OOOOOOOW");
+            removeElelementInQueue(taskNumber);
+        });
+
+        ParallelTransition parallelTransition = new ParallelTransition();
+        parallelTransition.getChildren().setAll(ftTask, pathTransition, ft);
 
         parallelTransition.setCycleCount(1);
         parallelTransition.setDelay(Duration.seconds( pathTransitions.size() * .55 ));
         parallelTransitions.add(parallelTransition);
 
         parallelTransition.setOnFinished(event -> {
-
             ((DefaultNodeSkin)getGraphEditor().getSkinLookup().lookupNode(getConnection().getTarget().getParent())).taskArrived(taskNumber);
-
-            queue.getChildren().remove(queue.getChildren().size()-1);
         });
     }
 
-    public void removeLastElelementInQueue() {
-        queue.getChildren().remove(queue.getChildren().size()-1);
+
+    public int getIdOfTaskInQueue(int taskNumber) {
+
+        for (int i = 0; i < queue.getChildren().size(); ++i) {
+            Node node = queue.getChildren().get(i);
+            int number = ((Task) node).getTaskNumber();
+
+            if (number == taskNumber) {
+                return i;
+            }
+        }
+
+        return -1 ;
+    }
+
+    public void removeTaskFromQueue(int index) {
+        queue.getChildren().remove(index);
+    }
+
+    public void removeElelementInQueue(int taskNumber) {
+
+        AbstractMap.SimpleEntry<SimpleConnectionSkin, Integer> min = new AbstractMap.SimpleEntry<>(null, Integer.MAX_VALUE);
+
+        for ( GConnector connector : this.getConnection().getSource().getParent().getConnectors()) {
+            if(connector.getType().contains("in")) {
+
+                for ( GConnection connection : connector.getConnections() ) {
+                    SimpleConnectionSkin connectionSkin = (SimpleConnectionSkin) getGraphEditor().getSkinLookup().lookupConnection(connection);
+                    int idInQueue = connectionSkin.getIdOfTaskInQueue(taskNumber);
+                    if (idInQueue < min.getValue() && idInQueue > -1) {
+                        min = new AbstractMap.SimpleEntry<>(connectionSkin, idInQueue);
+                    }
+                }
+            }
+        }
+
+        if (min.getKey() == null || min.getValue() == -1) {
+            return;
+        } else {
+            min.getKey().removeTaskFromQueue(min.getValue());
+        }
     }
 
 }
